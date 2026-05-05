@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "demo_openID",
-    "slug": "demo_openID",
+    "name": "OID4VCI Wallet PoC",
+    "slug": "oid4vci-wallet-poc",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "demoopenid",
+    "scheme": "oid4vciwalletpoc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -37,6 +37,15 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite usar la camara para escanear credential offers QR.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ]
     ],
