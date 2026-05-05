@@ -18,6 +18,7 @@ export type CredentialOfferGrants = {
   'urn:ietf:params:oauth:grant-type:pre-authorized_code'?: PreAuthorizedCodeGrant;
 };
 
+
 export type CredentialOffer = {
   credential_issuer: string;
   credential_configuration_ids?: string[];
