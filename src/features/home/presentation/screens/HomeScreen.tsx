@@ -33,6 +33,11 @@ export function HomeScreen() {
       <View style={styles.actions}>
         <AppButton title="Ver wallet" onPress={() => router.push('/wallet')} />
         <AppButton
+          title="Presentar credencial"
+          onPress={() => router.push('/presentation/scan')}
+          variant="secondary"
+        />
+        <AppButton
           title="Ir a demo de emision"
           onPress={() => router.push('/demo')}
           variant="secondary"

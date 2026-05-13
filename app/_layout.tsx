@@ -24,6 +24,18 @@ export default function RootLayout() {
           options={{ title: 'Detalle de credencial' }}
         />
         <Stack.Screen name="demo/index" options={{ title: 'Demo de emision' }} />
+        <Stack.Screen
+          name="presentation/scan"
+          options={{ title: 'Presentar credencial' }}
+        />
+        <Stack.Screen
+          name="presentation/select-credential"
+          options={{ title: 'Seleccionar credencial' }}
+        />
+        <Stack.Screen
+          name="presentation/result"
+          options={{ title: 'Resultado de presentacion' }}
+        />
       </Stack>
       <StatusBar style="dark" />
     </>
