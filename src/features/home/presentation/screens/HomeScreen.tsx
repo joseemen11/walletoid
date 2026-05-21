@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { CiudadaniaLoginButton } from '@/src/features/auth/ciudadania/CiudadaniaLoginButton';
 import { AppButton } from '@/src/shared/components/AppButton';
 import { AppCard } from '@/src/shared/components/AppCard';
 import { Screen } from '@/src/shared/components/Screen';
@@ -29,6 +30,8 @@ export function HomeScreen() {
           para avanzar con OID4VCI en etapas posteriores.
         </Text>
       </AppCard>
+
+      <CiudadaniaLoginButton />
 
       <View style={styles.actions}>
         <AppButton title="Ver wallet" onPress={() => router.push('/wallet')} />
