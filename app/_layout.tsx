@@ -2,6 +2,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { colors } from '@/src/shared/theme/colors';
+
 export default function RootLayout() {
   return (
     <>
@@ -10,14 +12,18 @@ export default function RootLayout() {
           headerBackTitle: 'Inicio',
           headerShadowVisible: false,
           headerStyle: {
-            backgroundColor: '#F4F7FB',
+            backgroundColor: colors.background,
           },
           contentStyle: {
-            backgroundColor: '#F4F7FB',
+            backgroundColor: colors.background,
           },
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+        <Stack.Screen name="identity/check" options={{ headerShown: false }} />
+        <Stack.Screen name="home" options={{ headerShown: false }} />
         <Stack.Screen name="wallet/index" options={{ title: 'Mi wallet' }} />
         <Stack.Screen
           name="wallet/[credentialId]"
