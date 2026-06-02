@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -19,13 +20,12 @@ import { colors } from '@/src/shared/theme/colors';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
 
+const TRACEABILITY_ROUTE = '/traceability' as Href;
+
 export function AuthenticatedHomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<CiudadaniaDisplayUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [traceabilityMessage, setTraceabilityMessage] = useState<string | null>(
-    null,
-  );
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
   useEffect(() => {
@@ -98,11 +98,7 @@ export function AuthenticatedHomeScreen() {
         </Text>
         <AppButton
           title="Registrar trazabilidad"
-          onPress={() => {
-            setTraceabilityMessage(
-              'Esta sección se implementará en la siguiente fase.',
-            );
-          }}
+          onPress={() => router.push(TRACEABILITY_ROUTE)}
         />
       </AppCard>
 
@@ -113,12 +109,6 @@ export function AuthenticatedHomeScreen() {
           variant="secondary"
         />
       </View>
-
-      {traceabilityMessage ? (
-        <AppCard>
-          <Text style={styles.cardText}>{traceabilityMessage}</Text>
-        </AppCard>
-      ) : null}
 
       <ConfirmModal
         visible={isLogoutModalVisible}

@@ -24,6 +24,11 @@ export default function RootLayout() {
         <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
         <Stack.Screen name="identity/check" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack.Screen name="traceability/index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="traceability/confirmation"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="wallet/index" options={{ title: 'Mi wallet' }} />
         <Stack.Screen
           name="wallet/[credentialId]"

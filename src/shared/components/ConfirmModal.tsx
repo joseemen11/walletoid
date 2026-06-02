@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppButton } from './AppButton';
+import { AppButton, type AppButtonProps } from './AppButton';
 import { colors } from '@/src/shared/theme/colors';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
@@ -11,6 +11,8 @@ type ConfirmModalProps = {
   description: string;
   confirmLabel: string;
   cancelLabel: string;
+  supportingText?: string;
+  confirmVariant?: AppButtonProps['variant'];
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -21,6 +23,8 @@ export function ConfirmModal({
   description,
   confirmLabel,
   cancelLabel,
+  supportingText,
+  confirmVariant = 'danger',
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -36,6 +40,9 @@ export function ConfirmModal({
           <View style={styles.textGroup}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.description}>{description}</Text>
+            {supportingText ? (
+              <Text style={styles.supportingText}>{supportingText}</Text>
+            ) : null}
           </View>
           <View style={styles.actions}>
             <AppButton
@@ -46,7 +53,7 @@ export function ConfirmModal({
             <AppButton
               title={confirmLabel}
               onPress={onConfirm}
-              variant="danger"
+              variant={confirmVariant}
             />
           </View>
         </Pressable>
@@ -83,6 +90,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.body,
     lineHeight: 24,
+  },
+  supportingText: {
+    color: colors.primary,
+    fontSize: typography.caption,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   actions: {
     gap: spacing.md,
