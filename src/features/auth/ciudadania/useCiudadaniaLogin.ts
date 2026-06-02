@@ -6,8 +6,8 @@ import { CIUDADANIA_CLIENT_ID } from '@/src/shared/config/env';
 
 import {
   buildCiudadaniaRedirectUri,
-  ciudadaniaDiscovery,
   CIUDADANIA_SCOPES,
+  ciudadaniaDiscovery,
   exchangeCiudadaniaCode,
   fetchCiudadaniaUserInfo,
   generateCiudadaniaNonce,
@@ -143,7 +143,7 @@ export function useCiudadaniaLogin(): CiudadaniaLoginState {
 
       setTokens(nextTokens);
       setUser(nextUser);
-    } catch (loginError) {
+    } catch (loginError: any) {
       setError(
         loginError instanceof Error
           ? loginError.message

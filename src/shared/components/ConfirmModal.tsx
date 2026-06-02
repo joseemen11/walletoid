@@ -1,9 +1,9 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppButton, type AppButtonProps } from './AppButton';
 import { colors } from '@/src/shared/theme/colors';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
+import { AppButton, type AppButtonProps } from './AppButton';
 
 type ConfirmModalProps = {
   visible: boolean;
@@ -13,6 +13,7 @@ type ConfirmModalProps = {
   cancelLabel: string;
   supportingText?: string;
   confirmVariant?: AppButtonProps['variant'];
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -25,6 +26,7 @@ export function ConfirmModal({
   cancelLabel,
   supportingText,
   confirmVariant = 'danger',
+  loading = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -33,9 +35,9 @@ export function ConfirmModal({
       animationType="fade"
       transparent
       visible={visible}
-      onRequestClose={onCancel}
+      onRequestClose={loading ? undefined : onCancel}
     >
-      <Pressable style={styles.overlay} onPress={onCancel}>
+      <Pressable style={styles.overlay} onPress={loading ? undefined : onCancel}>
         <Pressable style={styles.card}>
           <View style={styles.textGroup}>
             <Text style={styles.title}>{title}</Text>
@@ -49,11 +51,13 @@ export function ConfirmModal({
               title={cancelLabel}
               onPress={onCancel}
               variant="secondary"
+              disabled={loading}
             />
             <AppButton
               title={confirmLabel}
               onPress={onConfirm}
               variant={confirmVariant}
+              loading={loading}
             />
           </View>
         </Pressable>

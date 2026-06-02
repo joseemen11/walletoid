@@ -3,8 +3,17 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { loadCiudadaniaSession } from '@/src/features/auth/ciudadania/ciudadaniaSessionStorage';
 import { mapCiudadaniaUserForDisplay } from '@/src/features/auth/ciudadania/ciudadaniaAuthService';
+import { loadCiudadaniaSession } from '@/src/features/auth/ciudadania/ciudadaniaSessionStorage';
+import { addTrace } from '@/src/features/wira/calls';
+import { useWira } from '@/src/features/wira/useWira';
+import { stringToBase64Url } from '@/src/features/wira/utils';
+import { AppButton } from '@/src/shared/components/AppButton';
+import { ConfirmModal } from '@/src/shared/components/ConfirmModal';
+import { Screen } from '@/src/shared/components/Screen';
+import { colors } from '@/src/shared/theme/colors';
+import { spacing } from '@/src/shared/theme/spacing';
+import { typography } from '@/src/shared/theme/typography';
 import { saveTraceabilityEventDraft } from '../../application/traceabilityDraftStore';
 import type {
   TraceabilityEvent,
@@ -14,12 +23,6 @@ import { ChecklistItem } from '../components/ChecklistItem';
 import { LocationPreviewCard } from '../components/LocationPreviewCard';
 import { PhotoPreviewCard } from '../components/PhotoPreviewCard';
 import { TraceabilityStepCard } from '../components/TraceabilityStepCard';
-import { AppButton } from '@/src/shared/components/AppButton';
-import { ConfirmModal } from '@/src/shared/components/ConfirmModal';
-import { Screen } from '@/src/shared/components/Screen';
-import { colors } from '@/src/shared/theme/colors';
-import { spacing } from '@/src/shared/theme/spacing';
-import { typography } from '@/src/shared/theme/typography';
 
 const DEFAULT_LOT_CODE = 'CAF-001';
 const SIMULATED_LOCATION: TraceabilityLocation = {
@@ -73,8 +76,10 @@ export function TraceabilityScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
+  const [isConfirmingSignature, setIsConfirmingSignature] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSignModalVisible, setIsSignModalVisible] = useState(false);
+  const { sendTransaction } = useWira();
 
   const hasLotCode = lotCode.trim().length > 0;
   const hasPhoto = Boolean(photoUri);
@@ -143,15 +148,36 @@ export function TraceabilityScreen() {
       return;
     }
 
-    const eventPayload = await prepareTraceabilityRecord({
-      lotCode,
-      location,
-      photoUri,
-    });
+    if (isConfirmingSignature) {
+      return;
+    }
 
-    saveTraceabilityEventDraft(eventPayload);
-    setIsSignModalVisible(false);
-    router.replace('/traceability/confirmation');
+    setIsConfirmingSignature(true);
+    setMessage(null);
+
+    try {
+      const eventPayload = await prepareTraceabilityRecord({
+        lotCode,
+        location,
+        photoUri,
+      });
+
+      const payloadHash = stringToBase64Url(JSON.stringify(eventPayload));
+
+      await sendTransaction(addTrace(
+        payloadHash,
+        eventPayload.demoSignature
+      ));
+
+      saveTraceabilityEventDraft(eventPayload);
+      setIsSignModalVisible(false);
+      router.replace('/traceability/confirmation');
+    } catch(error: any) {
+      console.error(error);
+      setMessage('No se pudo completar el registro. Intenta nuevamente.');
+    } finally {
+      setIsConfirmingSignature(false);
+    }
   };
 
   return (
@@ -245,6 +271,7 @@ export function TraceabilityScreen() {
         cancelLabel="Cancelar"
         confirmLabel="Confirmar registro"
         confirmVariant="primary"
+        loading={isConfirmingSignature}
         onCancel={() => setIsSignModalVisible(false)}
         onConfirm={() => void confirmSignature()}
       />

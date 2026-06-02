@@ -8,6 +8,8 @@ import {
   hasPreparedIdentityCredentialDemo,
   savePreparedIdentityCredentialDemo,
 } from '@/src/features/identity/application/identityCredentialDemoStorage';
+import { useWira } from '@/src/features/wira/useWira';
+import { parseDdMmYyyyToDate } from '@/src/features/wira/utils';
 import { AppButton } from '@/src/shared/components/AppButton';
 import { AppCard } from '@/src/shared/components/AppCard';
 import { ErrorState } from '@/src/shared/components/ErrorState';
@@ -44,6 +46,9 @@ export function IdentityCheckScreen() {
   const router = useRouter();
   const [step, setStep] = useState<IdentityCheckStep>('validating');
   const [attempt, setAttempt] = useState(0);
+  const {
+    register,
+  } = useWira();
 
   useEffect(() => {
     let mounted = true;
@@ -80,17 +85,36 @@ export function IdentityCheckScreen() {
     };
   }, [attempt, router]);
 
+  const getVC = async () => {
+    const displayUser = {
+      fullName: 'Juan Pérez',
+      document: '123456',
+      fechaNacimiento: '01/01/1990',
+    };
+
+    const birthDate = parseDdMmYyyyToDate(displayUser.fechaNacimiento);
+    if (!birthDate) {
+      return;
+    }
+
+    await register({
+      fullName: displayUser.fullName,
+      nationalIdNumber: displayUser.document,
+      dateOfBirth: birthDate.getTime(),
+    });
+
+    console.log('VC obtained and user registered in Wira');
+  }
+
   const prepareCredential = async () => {
     setStep('preparing');
 
     try {
-      // TODO POC: aquí reclamar la credencial de identidad después del login.
-      // TODO POC: aquí guardar la credencial de identidad real.
-      // TODO POC: reemplazar este mock por el flujo real de credencial.
-      await wait(1100);
+      await getVC();
       await savePreparedIdentityCredentialDemo();
       setStep('ready');
-    } catch {
+    } catch (error: any) {
+      console.error(error);
       setStep('error');
     }
   };

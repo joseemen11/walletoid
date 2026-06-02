@@ -48,7 +48,14 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      ["expo-build-properties", {
+        "android": {
+          "usesCleartextTraffic": true
+        }
+      }],
+      "./plugins/withNativeModules",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,

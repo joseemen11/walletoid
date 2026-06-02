@@ -5,6 +5,9 @@ import { AppCard } from '@/src/shared/components/AppCard';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
 
+import { useState } from 'react';
+import { useWira } from '../../wira/useWira';
+import { parseDdMmYyyyToDate } from '../../wira/utils';
 import { mapCiudadaniaUserForDisplay } from './ciudadaniaAuthService';
 import { useCiudadaniaLogin } from './useCiudadaniaLogin';
 
@@ -31,6 +34,34 @@ export function CiudadaniaLoginButton() {
     user,
   } = useCiudadaniaLogin();
   const displayUser = user ? mapCiudadaniaUserForDisplay(user) : null;
+  const {
+    register,
+    getUserData,
+  } = useWira();
+  const [userData, setUserData] = useState<any>(null);
+
+  const getVC = async () => {
+    if (!displayUser) return;
+
+    const birthDate = parseDdMmYyyyToDate(displayUser.fechaNacimiento);
+    if (!birthDate) {
+      console.log('Invalid birth date format:', displayUser.fechaNacimiento);
+      return;
+    }
+
+    await register({
+      fullName: displayUser.fullName,
+      nationalIdNumber: displayUser.document,
+      dateOfBirth: birthDate.getTime(),
+    });
+
+    console.log('VC obtained and user registered in Wira');
+  }
+
+  const getData = async () => {
+    const data = await getUserData();
+    setUserData(data);
+  }
 
   return (
     <AppCard>
@@ -46,6 +77,7 @@ export function CiudadaniaLoginButton() {
             label="Fecha de nacimiento"
             value={displayUser.fechaNacimiento}
           />
+          <UserField label="Wira Data" value={userData ?? 'No registrado'} />
         </View>
       ) : (
         <AppButton
@@ -59,14 +91,26 @@ export function CiudadaniaLoginButton() {
         />
       )}
 
-      {displayUser ? (
+      {displayUser ? (<>
         <AppButton
           disabled={loading}
           onPress={logout}
           title={loading ? 'Cerrando sesion...' : 'Cerrar sesion local'}
           variant="secondary"
         />
-      ) : null}
+        <AppButton
+          disabled={loading}
+          onPress={getVC}
+          title={loading ? 'Cerrando sesion...' : 'Obtener VC'}
+          variant="secondary"
+        />
+        <AppButton
+          disabled={loading}
+          onPress={getData}
+          title={loading ? 'Cerrando sesion...' : 'Obtener datos de Wira'}
+          variant="secondary"
+        />
+      </>) : null}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </AppCard>

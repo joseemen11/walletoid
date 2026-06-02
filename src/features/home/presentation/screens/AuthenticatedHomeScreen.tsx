@@ -1,16 +1,17 @@
-import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import {
-  clearCiudadaniaSession,
-  loadCiudadaniaSession,
-} from '@/src/features/auth/ciudadania/ciudadaniaSessionStorage';
-import {
   mapCiudadaniaUserForDisplay,
   type CiudadaniaDisplayUser,
 } from '@/src/features/auth/ciudadania/ciudadaniaAuthService';
+import {
+  clearCiudadaniaSession,
+  loadCiudadaniaSession,
+} from '@/src/features/auth/ciudadania/ciudadaniaSessionStorage';
+import { useWira } from '@/src/features/wira/useWira';
 import { AppButton } from '@/src/shared/components/AppButton';
 import { AppCard } from '@/src/shared/components/AppCard';
 import { ConfirmModal } from '@/src/shared/components/ConfirmModal';
@@ -27,6 +28,7 @@ export function AuthenticatedHomeScreen() {
   const [user, setUser] = useState<CiudadaniaDisplayUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const { getUserData } = useWira();
 
   useEffect(() => {
     let mounted = true;
@@ -44,7 +46,18 @@ export function AuthenticatedHomeScreen() {
           return;
         }
 
-        setUser(mapCiudadaniaUserForDisplay(session.user));
+        const data = await getUserData();
+        const userData = data.vc.credentialSubject;
+
+        const sessionUserData = mapCiudadaniaUserForDisplay(session.user);
+
+        setUser({
+          fullName: userData.fullName,
+          document: userData.nationalIdNumber,
+          celular: sessionUserData.celular,
+          email: sessionUserData.email,
+          fechaNacimiento: new Date(userData.birthDate).toDateString()
+        });
       } catch {
         if (mounted) {
           router.replace('/auth/login');
