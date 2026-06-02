@@ -1,10 +1,10 @@
+import { BUNDLER } from '@/src/shared/config/env';
 import { createSmartAccountClient } from 'permissionless';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { createPublicClient, Hex, http } from 'viem';
 import { entryPoint07Address, toCoinbaseSmartAccount } from 'viem/account-abstraction';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from "viem/chains";
-import { BUNDLER } from './register';
 
 const RECEIPT_WAIT_TIMEOUT_MS = 15 * 60 * 1000;
 const RECEIPT_POLL_INTERVAL_MS = 2000;

@@ -1,12 +1,9 @@
+import { BUNDLER, MOCKED_PIN } from "@/src/shared/config/env";
 import wira from "wira-sdk";
 import { VCData } from "./types";
 
 const CRED_TYPE = "PersonCredential";
 const CRED_EXP_DAYS = "365";
-export const BUNDLER = "";
-export const MOCKED_PIN = "1234";
-export const GATEWAY_BASE = "";
-export const CIRCUITS_URL = "";
 
 export async function initRegister(data: VCData) {
 	try {

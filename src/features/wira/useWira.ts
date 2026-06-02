@@ -1,7 +1,8 @@
+import { GATEWAY_BASE, MOCKED_PIN } from "@/src/shared/config/env";
 import { useCallback, useEffect } from "react";
 import wira from "wira-sdk";
 import { executeOperation } from "./account";
-import { GATEWAY_BASE, initRegister, MOCKED_PIN } from "./register";
+import { initRegister } from "./register";
 import { VCData } from "./types";
 
 export function useWira() {

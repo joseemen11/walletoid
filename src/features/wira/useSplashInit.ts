@@ -1,7 +1,7 @@
+import { CIRCUITS_URL, GATEWAY_BASE } from '@/src/shared/config/env';
 import { useCallback, useState } from 'react';
 import { DeviceEventEmitter, EmitterSubscription } from 'react-native';
 import wira, { config } from 'wira-sdk';
-import { CIRCUITS_URL, GATEWAY_BASE } from './register';
 
 const CIRCUIT_DOWNLOAD_STATUS = config.CircuitDownloadStatus
 
