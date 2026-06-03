@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/src/shared/theme/colors';
@@ -12,7 +13,9 @@ type ConfirmModalProps = {
   confirmLabel: string;
   cancelLabel: string;
   supportingText?: string;
+  children?: ReactNode;
   confirmVariant?: AppButtonProps['variant'];
+  confirmDisabled?: boolean;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -25,7 +28,9 @@ export function ConfirmModal({
   confirmLabel,
   cancelLabel,
   supportingText,
+  children,
   confirmVariant = 'danger',
+  confirmDisabled = false,
   loading = false,
   onConfirm,
   onCancel,
@@ -46,6 +51,7 @@ export function ConfirmModal({
               <Text style={styles.supportingText}>{supportingText}</Text>
             ) : null}
           </View>
+          {children}
           <View style={styles.actions}>
             <AppButton
               title={cancelLabel}
@@ -57,6 +63,7 @@ export function ConfirmModal({
               title={confirmLabel}
               onPress={onConfirm}
               variant={confirmVariant}
+              disabled={confirmDisabled}
               loading={loading}
             />
           </View>

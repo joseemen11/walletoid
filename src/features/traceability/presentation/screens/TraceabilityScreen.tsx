@@ -7,38 +7,44 @@ import { mapCiudadaniaUserForDisplay } from '@/src/features/auth/ciudadania/ciud
 import { loadCiudadaniaSession } from '@/src/features/auth/ciudadania/ciudadaniaSessionStorage';
 import { addTrace } from '@/src/features/wira/calls';
 import { useWira } from '@/src/features/wira/useWira';
-import { stringToBase64Url } from '@/src/features/wira/utils';
 import { AppButton } from '@/src/shared/components/AppButton';
 import { ConfirmModal } from '@/src/shared/components/ConfirmModal';
 import { Screen } from '@/src/shared/components/Screen';
 import { colors } from '@/src/shared/theme/colors';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
+import {
+  getLoadedPocCertificate,
+  loadPocSoftokenCertificate,
+} from '../../application/digitalCertificatePocStore';
+import { signTraceabilityPayloadPoc } from '../../application/DigitalSignaturePocService';
+import { validatePocSignature } from '../../application/SignatureValidationPocService';
 import { saveTraceabilityEventDraft } from '../../application/traceabilityDraftStore';
+import {
+  canonicalizePayload,
+  createDocumentHash,
+} from '../../application/traceabilityPayloadService';
 import type {
-  TraceabilityEvent,
   TraceabilityLocation,
+  TraceabilityPayload,
 } from '../../domain/traceability.types';
+import type { SignerIdentity } from '../../domain/digitalSignature.types';
 import { ChecklistItem } from '../components/ChecklistItem';
 import { LocationPreviewCard } from '../components/LocationPreviewCard';
 import { PhotoPreviewCard } from '../components/PhotoPreviewCard';
 import { TraceabilityStepCard } from '../components/TraceabilityStepCard';
 
 const DEFAULT_LOT_CODE = 'CAF-001';
-const SIMULATED_LOCATION: TraceabilityLocation = {
+const POC_LOCATION: TraceabilityLocation = {
   latitude: -16.5,
   longitude: -68.15,
 };
-
-function createInternalSignature(): string {
-  return `registro-${Date.now()}`;
-}
 
 async function prepareTraceabilityRecord(input: {
   lotCode: string;
   location: TraceabilityLocation;
   photoUri: string;
-}): Promise<TraceabilityEvent> {
+}): Promise<TraceabilityPayload> {
   const session = await loadCiudadaniaSession();
   const displayUser = session
     ? mapCiudadaniaUserForDisplay(session.user)
@@ -54,16 +60,17 @@ async function prepareTraceabilityRecord(input: {
     userName: displayUser?.fullName,
   };
 
-  // TODO POC: normalizar este payload antes de generar el hash.
-  // TODO POC: generar hash real del evento de trazabilidad.
-  // TODO POC: firmar el hash con el mecanismo de firma digital definido.
-  // TODO POC: enviar solo el hash del evento al contrato inteligente.
-  // TODO POC: guardar la constancia del registro, por ejemplo transactionHash, eventHash y fecha.
-  // TODO POC: reemplazar este flujo interno por el servicio real de trazabilidad.
+  return eventPayload;
+}
+
+function createSignerIdentity(
+  eventPayload: TraceabilityPayload,
+): SignerIdentity {
   return {
-    ...eventPayload,
-    signedForDemo: true,
-    demoSignature: createInternalSignature(),
+    userId: eventPayload.registeredBy,
+    name: eventPayload.userName,
+    document: eventPayload.registeredBy,
+    source: eventPayload.registeredBy ? 'CIUDADANIA_DIGITAL' : 'LOCAL_DEMO',
   };
 }
 
@@ -79,6 +86,7 @@ export function TraceabilityScreen() {
   const [isConfirmingSignature, setIsConfirmingSignature] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSignModalVisible, setIsSignModalVisible] = useState(false);
+  const [softokenPassword, setSoftokenPassword] = useState('');
   const { sendTransaction } = useWira();
 
   const hasLotCode = lotCode.trim().length > 0;
@@ -129,8 +137,8 @@ export function TraceabilityScreen() {
   };
 
   const captureLocation = () => {
-    // TODO POC: reemplazar ubicación simulada por ubicación real del dispositivo.
-    setLocation(SIMULATED_LOCATION);
+    // TODO POC: reemplazar esta ubicacion PoC por ubicacion real del dispositivo.
+    setLocation(POC_LOCATION);
     setMessage(null);
   };
 
@@ -139,7 +147,17 @@ export function TraceabilityScreen() {
       return;
     }
 
+    setSoftokenPassword('');
     setIsSignModalVisible(true);
+  };
+
+  const closeSignModal = () => {
+    if (isConfirmingSignature) {
+      return;
+    }
+
+    setSoftokenPassword('');
+    setIsSignModalVisible(false);
   };
 
   const confirmSignature = async () => {
@@ -156,20 +174,59 @@ export function TraceabilityScreen() {
     setMessage(null);
 
     try {
+      if (!softokenPassword.trim()) {
+        throw new Error('Ingresa el PIN o contraseña del softoken.');
+      }
+
       const eventPayload = await prepareTraceabilityRecord({
         lotCode,
         location,
         photoUri,
       });
+      const payloadCanonical = canonicalizePayload(eventPayload);
+      const documentHash = await createDocumentHash(payloadCanonical);
+      const signerIdentity = createSignerIdentity(eventPayload);
+      const certificate =
+        getLoadedPocCertificate() ??
+        loadPocSoftokenCertificate(signerIdentity);
 
-      const payloadHash = stringToBase64Url(JSON.stringify(eventPayload));
+      const evidence = await signTraceabilityPayloadPoc({
+        payloadOriginal: eventPayload,
+        payloadCanonical,
+        documentHash,
+        signerIdentity,
+        certificate,
+        password: softokenPassword,
+      });
+      const validation = validatePocSignature(evidence);
 
-      await sendTransaction(addTrace(
-        payloadHash,
-        eventPayload.demoSignature
+      if (validation.status !== 'POC_VALID') {
+        throw new Error('No se pudo validar la evidencia de firma.');
+      }
+
+      const validatedEvidence = {
+        ...evidence,
+        validationStatus: validation.status,
+        validatedAt: validation.validatedAt,
+      };
+
+      const blockchainResult = await sendTransaction(addTrace(
+        documentHash,
+        validatedEvidence.signatureHash
       ));
 
-      saveTraceabilityEventDraft(eventPayload);
+      const finalizedEvidence = {
+        ...validatedEvidence,
+        blockchainTxHash: blockchainResult?.txHash,
+        receiptStatus: String(blockchainResult?.receipt?.status ?? ''),
+        registeredAt: new Date().toISOString(),
+      };
+
+      saveTraceabilityEventDraft({
+        ...eventPayload,
+        signatureEvidence: finalizedEvidence,
+      });
+      setSoftokenPassword('');
       setIsSignModalVisible(false);
       router.replace('/traceability/confirmation');
     } catch(error: any) {
@@ -266,15 +323,35 @@ export function TraceabilityScreen() {
       <ConfirmModal
         visible={isSignModalVisible}
         title="Firmar registro"
-        description="Confirma la información para completar el registro."
-        supportingText="Se generará una constancia del registro."
+        description="Ingresa el PIN o contraseña del softoken para firmar el evento."
+        supportingText="Softoken cargado"
         cancelLabel="Cancelar"
         confirmLabel="Confirmar registro"
         confirmVariant="primary"
+        confirmDisabled={!softokenPassword.trim()}
         loading={isConfirmingSignature}
-        onCancel={() => setIsSignModalVisible(false)}
+        onCancel={closeSignModal}
         onConfirm={() => void confirmSignature()}
-      />
+      >
+        <View style={styles.pinGroup}>
+          <Text style={styles.inputLabel}>PIN/contraseña del softoken</Text>
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setSoftokenPassword}
+            placeholder="Ingresa el PIN o contraseña"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            style={styles.input}
+            value={softokenPassword}
+          />
+          {softokenPassword.trim() ? (
+            <Text style={styles.pinHint}>
+              PIN/contraseña ingresado. Firma generada y validación PoC listas para registrar.
+            </Text>
+          ) : null}
+        </View>
+      </ConfirmModal>
     </Screen>
   );
 }
@@ -322,6 +399,15 @@ const styles = StyleSheet.create({
   },
   checklist: {
     gap: spacing.sm,
+  },
+  pinGroup: {
+    gap: spacing.sm,
+  },
+  pinHint: {
+    color: colors.success,
+    fontSize: typography.caption,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   message: {
     color: colors.danger,

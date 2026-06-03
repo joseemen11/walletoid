@@ -10,7 +10,7 @@ export function useWira() {
 		wira.provision.ensureProvisioned({
 			mock: true,
 			gatewayBase: GATEWAY_BASE
-		}).catch((error) => {
+		}).catch((error: any) => {
 			console.error("Error provisioning Wira SDK:", error);
 		});
 	}, []);
@@ -46,7 +46,7 @@ export function useWira() {
 			throw new Error("User data not found. Please register first.");
 		}
 
-		await executeOperation(
+		return executeOperation(
 			userData.privKey,
 			callData
 		)

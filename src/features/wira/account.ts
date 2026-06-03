@@ -95,6 +95,5 @@ export async function executeOperation(
 
   const block = await publicClient.getBlock({blockNumber: receipt.blockNumber});
   const date = new Date(Number(block.timestamp) * 1000);
-  return {receipt, date: date.toLocaleString()};
+  return {txHash, receipt, date: date.toLocaleString()};
 }
-

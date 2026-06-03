@@ -16,6 +16,11 @@ import { typography } from '@/src/shared/theme/typography';
 
 const TRACEABILITY_ROUTE = '/traceability' as Href;
 
+type SummaryRowProps = {
+  label: string;
+  value?: string;
+};
+
 function formatDate(value?: string): string {
   if (!value) {
     return new Date().toLocaleString();
@@ -30,9 +35,24 @@ function formatDate(value?: string): string {
   return date.toLocaleString();
 }
 
+function SummaryRow({ label, value }: SummaryRowProps) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
+    </View>
+  );
+}
+
 export function TraceabilityConfirmationScreen() {
   const router = useRouter();
   const event = getTraceabilityEventDraft();
+  const evidence = event?.signatureEvidence;
+  const certificate = evidence?.certificate;
   const lotCode = event?.lotCode ?? 'CAF-001';
   const date = formatDate(event?.createdAt);
 
@@ -58,8 +78,48 @@ export function TraceabilityConfirmationScreen() {
       <TraceabilitySummaryCard
         lotCode={lotCode}
         date={date}
-        status="Registro firmado"
+        status={
+          evidence?.validationStatus === 'POC_VALID'
+            ? 'Validación PoC correcta'
+            : 'Registro firmado'
+        }
       />
+
+      {evidence ? (
+        <AppCard>
+          <View style={styles.summaryGroup}>
+            <SummaryRow label="Tipo de evento" value={event?.eventType} />
+            <SummaryRow label="Document hash" value={evidence.documentHash} />
+            <SummaryRow label="Modo de firma" value={evidence.mode} />
+            <SummaryRow
+              label="Estado de validación"
+              value={evidence.validationStatus}
+            />
+            <SummaryRow
+              label="Signature hash"
+              value={evidence.signatureHash}
+            />
+            <SummaryRow label="TxHash" value={evidence.blockchainTxHash} />
+          </View>
+        </AppCard>
+      ) : null}
+
+      {certificate ? (
+        <AppCard>
+          <View style={styles.summaryGroup}>
+            <Text style={styles.sectionTitle}>Certificado</Text>
+            <SummaryRow label="Titular" value={certificate.subjectName} />
+            <SummaryRow
+              label="Documento"
+              value={certificate.subjectDocument}
+            />
+            <SummaryRow label="Emisor" value={certificate.issuer} />
+            <SummaryRow label="Serial" value={certificate.serialNumber} />
+            <SummaryRow label="Fingerprint" value={certificate.fingerprint} />
+          </View>
+        </AppCard>
+      ) : null}
+
 
       {!event ? (
         <AppCard>
@@ -97,5 +157,32 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.md,
+  },
+  summaryGroup: {
+    gap: spacing.md,
+  },
+  row: {
+    gap: spacing.xs,
+  },
+  label: {
+    color: colors.textMuted,
+    fontSize: typography.caption,
+    fontWeight: '700',
+  },
+  value: {
+    color: colors.text,
+    fontSize: typography.body,
+    lineHeight: 24,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: typography.heading,
+    fontWeight: '700',
+  },
+  note: {
+    color: colors.warning,
+    fontSize: typography.body,
+    fontWeight: '700',
+    lineHeight: 24,
   },
 });

@@ -1,9 +1,11 @@
+import type { DigitalSignatureEvidence } from './digitalSignature.types';
+
 export type TraceabilityLocation = {
   latitude: number;
   longitude: number;
 };
 
-export type TraceabilityEvent = {
+export type TraceabilityPayload = {
   lotCode: string;
   eventType: 'coffee_lot_location_evidence';
   location: TraceabilityLocation;
@@ -11,6 +13,8 @@ export type TraceabilityEvent = {
   userName?: string;
   registeredBy?: string;
   createdAt: string;
-  signedForDemo: true;
-  demoSignature: string;
+};
+
+export type TraceabilityEvent = TraceabilityPayload & {
+  signatureEvidence?: DigitalSignatureEvidence;
 };
