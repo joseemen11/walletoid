@@ -10,6 +10,7 @@ type ConfirmModalProps = {
   visible: boolean;
   title: string;
   description: string;
+  titleContent?: ReactNode;
   confirmLabel: string;
   cancelLabel: string;
   supportingText?: string;
@@ -25,6 +26,7 @@ export function ConfirmModal({
   visible,
   title,
   description,
+  titleContent,
   confirmLabel,
   cancelLabel,
   supportingText,
@@ -46,6 +48,7 @@ export function ConfirmModal({
         <Pressable style={styles.card}>
           <View style={styles.textGroup}>
             <Text style={styles.title}>{title}</Text>
+            {titleContent}
             <Text style={styles.description}>{description}</Text>
             {supportingText ? (
               <Text style={styles.supportingText}>{supportingText}</Text>

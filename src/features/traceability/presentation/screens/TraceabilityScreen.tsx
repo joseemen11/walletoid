@@ -24,11 +24,11 @@ import {
   canonicalizePayload,
   createDocumentHash,
 } from '../../application/traceabilityPayloadService';
+import type { SignerIdentity } from '../../domain/digitalSignature.types';
 import type {
   TraceabilityLocation,
   TraceabilityPayload,
 } from '../../domain/traceability.types';
-import type { SignerIdentity } from '../../domain/digitalSignature.types';
 import { ChecklistItem } from '../components/ChecklistItem';
 import { LocationPreviewCard } from '../components/LocationPreviewCard';
 import { PhotoPreviewCard } from '../components/PhotoPreviewCard';
@@ -84,6 +84,7 @@ export function TraceabilityScreen() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
   const [isConfirmingSignature, setIsConfirmingSignature] = useState(false);
+  const [dataToSign, setDataToSign] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSignModalVisible, setIsSignModalVisible] = useState(false);
   const [softokenPassword, setSoftokenPassword] = useState('');
@@ -142,11 +143,18 @@ export function TraceabilityScreen() {
     setMessage(null);
   };
 
-  const requestSubmit = () => {
+  const requestSubmit = async () => {
     if (!canSubmit) {
       return;
     }
 
+    const payloadToSign = await prepareTraceabilityRecord({
+      lotCode,
+      location: location!,
+      photoUri: photoUri!,
+    });
+
+    setDataToSign(JSON.stringify(payloadToSign, null, 2));
     setSoftokenPassword('');
     setIsSignModalVisible(true);
   };
@@ -323,6 +331,14 @@ export function TraceabilityScreen() {
       <ConfirmModal
         visible={isSignModalVisible}
         title="Firmar registro"
+        titleContent={
+          dataToSign ? (
+            <View style={styles.jsonSection}>
+              <Text style={styles.jsonLabel}>Datos a firmar</Text>
+              <Text style={styles.jsonValue}>{dataToSign}</Text>
+            </View>
+          ) : null
+        }
         description="Ingresa el PIN o contraseña del softoken para firmar el evento."
         supportingText="Softoken cargado"
         cancelLabel="Cancelar"
@@ -374,6 +390,25 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.body,
     fontWeight: '700',
+  },
+  jsonSection: {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.sm,
+  },
+  jsonLabel: {
+    color: colors.textMuted,
+    fontSize: typography.caption,
+    fontWeight: '700',
+  },
+  jsonValue: {
+    color: colors.text,
+    fontFamily: 'monospace',
+    fontSize: typography.caption,
+    lineHeight: 18,
   },
   input: {
     backgroundColor: colors.surface,

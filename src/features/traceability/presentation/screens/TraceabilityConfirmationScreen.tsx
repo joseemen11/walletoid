@@ -1,18 +1,18 @@
-import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
-import {
-  clearTraceabilityEventDraft,
-  getTraceabilityEventDraft,
-} from '../../application/traceabilityDraftStore';
-import { TraceabilitySummaryCard } from '../components/TraceabilitySummaryCard';
 import { AppButton } from '@/src/shared/components/AppButton';
 import { AppCard } from '@/src/shared/components/AppCard';
 import { Screen } from '@/src/shared/components/Screen';
 import { colors } from '@/src/shared/theme/colors';
 import { spacing } from '@/src/shared/theme/spacing';
 import { typography } from '@/src/shared/theme/typography';
+import {
+  clearTraceabilityEventDraft,
+  getTraceabilityEventDraft,
+} from '../../application/traceabilityDraftStore';
+import { TraceabilitySummaryCard } from '../components/TraceabilitySummaryCard';
 
 const TRACEABILITY_ROUTE = '/traceability' as Href;
 
@@ -53,8 +53,20 @@ export function TraceabilityConfirmationScreen() {
   const event = getTraceabilityEventDraft();
   const evidence = event?.signatureEvidence;
   const certificate = evidence?.certificate;
+  const txHash = evidence?.blockchainTxHash;
+  const txUrl = txHash
+    ? `https://sepolia.basescan.org/tx/${encodeURIComponent(txHash)}`
+    : undefined;
   const lotCode = event?.lotCode ?? 'CAF-001';
   const date = formatDate(event?.createdAt);
+
+  const openTxInBrowser = async () => {
+    if (!txUrl) {
+      return;
+    }
+
+    await Linking.openURL(txUrl);
+  };
 
   const goHome = () => {
     clearTraceabilityEventDraft();
@@ -74,6 +86,23 @@ export function TraceabilityConfirmationScreen() {
           La evidencia fue registrada correctamente.
         </Text>
       </View>
+
+      {txHash ? (
+        <AppCard>
+          <View style={styles.summaryGroup}>
+            <SummaryRow label="Hash de la transacción" value={txHash} />
+            <View style={styles.hashCardActions}>
+              <AppButton
+                title="Abrir en BaseScan"
+                onPress={() => {
+                  void openTxInBrowser();
+                }}
+                variant="secondary"
+              />
+            </View>
+          </View>
+        </AppCard>
+      ) : null}
 
       <TraceabilitySummaryCard
         lotCode={lotCode}
@@ -99,7 +128,6 @@ export function TraceabilityConfirmationScreen() {
               label="Signature hash"
               value={evidence.signatureHash}
             />
-            <SummaryRow label="TxHash" value={evidence.blockchainTxHash} />
           </View>
         </AppCard>
       ) : null}
@@ -157,6 +185,9 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.md,
+  },
+  hashCardActions: {
+    gap: spacing.sm,
   },
   summaryGroup: {
     gap: spacing.md,
